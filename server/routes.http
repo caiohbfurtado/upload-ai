@@ -31,5 +31,5 @@ Content-Type: application/json
 {
   "videoId": "1d2afcb5-f5fe-49fb-9184-fb10173a9697",
   "template": 0.5,
-  "template": "Gere um resumo sucinto da transcrição do vídeo informada a seguir: '''{transcription}'''"
+  "prompt": "Gere um resumo sucinto da transcrição do vídeo informada a seguir: '''{transcription}'''"
 }
