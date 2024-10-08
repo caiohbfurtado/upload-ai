@@ -1,41 +1,79 @@
-import { ScrollView, View } from 'react-native'
-import { Typography } from '../components/Typography'
+import { useRef, useState } from 'react'
+import { FlatList, View, ViewToken } from 'react-native'
+import * as ImagePicker from 'expo-image-picker'
+
 import { Header } from '../components/Header'
-import { TextArea } from '../components/TextArea'
-import { Button } from '../components/Button'
-import { FileVideo, Upload } from 'lucide-react-native'
+import { Indicators } from '../components/Indicators'
+
+import { FirstStep } from './Steps/FirstStep'
+import { SecondStep } from './Steps/SecondStep'
 
 export function Home() {
+  const [prompt, setPrompt] = useState('')
+  const [temperature, setTemperature] = useState(0.5)
+  const [inViewPort, setInViewPort] = useState(0)
+  const [video, setVideo] = useState<ImagePicker.ImagePickerAsset | null>(null)
+  const flatListRef = useRef<FlatList>(null)
+  const viewabilityConfig = useRef({
+    itemVisiblePercentThreshold: 50,
+    waitForInteraction: true,
+    minimumViewTime: 5,
+  })
+
+  const onViewableItemsChanged = useRef(
+    ({ changed }: { changed: ViewToken[] }) => {
+      if (changed && changed.length > 0) {
+        setInViewPort(changed[0]?.index ?? 1)
+      }
+    },
+  )
+
+  function handleSubmitAndChangeStep(step: number) {
+    setInViewPort(step)
+
+    flatListRef?.current?.scrollToIndex({
+      animated: true,
+      index: step,
+    })
+  }
+
   return (
     <View className="flex-1 items-center bg-zinc-950 pt-16">
       <Header />
+      <Indicators current={inViewPort} />
 
-      <ScrollView
-        style={{ padding: 24, paddingBottom: 150, width: '100%' }}
-        contentContainerStyle={{ paddingBottom: 80 }}
-      >
-        {/* cabeçalho */}
-        <View className="mb-4">
-          <Typography className="font-head text-2xl mb-1">Olá!</Typography>
-          <Typography className="font-body text-base text-zinc-300">
-            Seja bem vindo ao upload.ai, a inteligência artificial que te ajuda
-            a criar conteúdos!
-          </Typography>
-        </View>
-
-        {/* upload do vídeo */}
-        <View className="bg-transparent items-center justify-center border border-zinc-500 rounded-md aspect-video w-full mb-4">
-          <FileVideo className="w-4 h-4 color-zinc-500 mb-2" />
-          <Typography className="text-zinc-500">Selecione um vídeo</Typography>
-        </View>
-
-        <TextArea
-          label="Prompt de transcrição"
-          placeholder="Inclua palavras-chave mencionadas no vídeo separadas por vírgula (,)"
-        />
-
-        <Button title="Carregar vídeo" className="mt-6" icon={Upload} />
-      </ScrollView>
+      <FlatList
+        ref={flatListRef}
+        horizontal
+        pagingEnabled
+        nestedScrollEnabled
+        scrollEnabled={false}
+        data={[0, 1]}
+        showsHorizontalScrollIndicator={false}
+        renderItem={({ item }) => {
+          if (item === 0) {
+            return (
+              <FirstStep
+                video={video}
+                onChangeVideo={setVideo}
+                onNextStep={handleSubmitAndChangeStep}
+              />
+            )
+          }
+          return (
+            <SecondStep
+              prompt={prompt}
+              onChangePrompt={setPrompt}
+              temperature={temperature}
+              onChangeTemperature={setTemperature}
+              onNextStep={handleSubmitAndChangeStep}
+              onPreviousStep={handleSubmitAndChangeStep}
+            />
+          )
+        }}
+        viewabilityConfig={viewabilityConfig.current}
+        onViewableItemsChanged={onViewableItemsChanged.current}
+      />
     </View>
   )
 }
